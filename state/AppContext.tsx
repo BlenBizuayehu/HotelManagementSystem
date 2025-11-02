@@ -13,7 +13,12 @@ import {
     View,
 } from '../types';
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api';
+// src/context/AppContext.tsx (or .js)
+const dev = "http://127.0.0.1:5000/api";
+const prod = "https://hotelmanagementsystem-yscv.onrender.com/api";
+
+export const API_BASE_URL = import.meta.env.MODE === "production" ? prod : dev;
+console.log("API_BASE_URL:", API_BASE_URL);
 
 interface IAppContext {
     theme: 'light' | 'dark';
