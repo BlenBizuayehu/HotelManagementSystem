@@ -1,0 +1,5 @@
+{
+  "name": "Elysian Hotel Management System",
+  "description": "A comprehensive hotel management system featuring a customer-facing booking portal and internal modules for managing bookings, HR, inventory, and spa & gym facilities. Powered by React, Tailwind CSS, and Gemini AI.",
+  "requestFramePermissions": []
+}
