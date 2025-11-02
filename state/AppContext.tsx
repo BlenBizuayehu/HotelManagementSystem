@@ -13,11 +13,12 @@ import {
     View,
 } from '../types';
 
-// src/context/AppContext.tsx (or .js)
-const dev = "http://127.0.0.1:5000/api";
-const prod = "https://hotelmanagementsystem-yscv.onrender.com/api";
+const mode = (import.meta as any).env.MODE;
+const API_BASE_URL =
+  mode === "production"
+    ? "https://hotelmanagementsystem-yscv.onrender.com/api"
+    : "http://127.0.0.1:5000/api";
 
-export const API_BASE_URL = import.meta.env.MODE === "production" ? prod : dev;
 console.log("API_BASE_URL:", API_BASE_URL);
 
 interface IAppContext {
