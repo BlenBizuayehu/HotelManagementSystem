@@ -16,7 +16,7 @@ import {
 const mode = (import.meta as any).env.MODE;
 const API_BASE_URL =
   mode === "production"
-    ? "https://hotelmanagementsystem-1-1ozu.onrender.com"
+    ? "https://hotelmanagementsystem-1-1ozu.onrender.com/api"
     : "http://127.0.0.1:5000/api";
 
 console.log("API_BASE_URL:", API_BASE_URL);
