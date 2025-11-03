@@ -50,13 +50,28 @@ app.use(helmet({
   },
 }));
 
-// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://hotel-management-system-n5yt-1zoc4fmst-blen-bizuayehus-projects.vercel.app',
+];
+
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // allow requests with no origin (like curl or Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
+
 
 // Body parser (skip for webhook route)
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
