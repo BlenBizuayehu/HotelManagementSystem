@@ -52,8 +52,9 @@ app.use(helmet({
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://hotel-management-system-n5yt.vercel.app', // Vercel frontend
+  'https://hotel-management-system-n5yt-1zoc4fmst-blen-bizuayehus-projects.vercel.app',
 ];
+
 
 const corsOptions = {
   origin: function (origin, callback) {
