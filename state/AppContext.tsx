@@ -16,7 +16,7 @@ import {
 const mode = (import.meta as any).env.MODE;
 const API_BASE_URL =
   mode === "production"
-    ? "https://hotelmanagementsystem-yscv.onrender.com/api"
+    ? "https://hotelmanagementsystem-1-1ozu.onrender.com"
     : "http://127.0.0.1:5000/api";
 
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -148,6 +148,46 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
         }, 5000);
     }, []);
     
+    // Helper function to get auth headers
+    const getAuthHeaders = useCallback((): HeadersInit => {
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    }, []);
+
+    // Helper function to refresh token if needed
+    const refreshTokenIfNeeded = useCallback(async (): Promise<boolean> => {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) return false;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                return true;
+            }
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+        }
+
+        // If refresh fails, clear tokens and user data
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('currentUser');
+        setCurrentUser(null);
+        return false;
+    }, []);
+
     // Fix: Replaced the previous data fetching logic with a more robust and efficient effect hook
     // that fetches all data in parallel on mount, preventing the infinite loop.
     useEffect(() => {
@@ -160,9 +200,10 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             ];
             
             // Use Promise.allSettled to ensure all requests complete, even if some fail.
+            const headers = getAuthHeaders();
             const results = await Promise.allSettled(
                 endpoints.map(endpoint => 
-                    fetch(`${API_BASE_URL}/${endpoint}`).then(res => {
+                    fetch(`${API_BASE_URL}/${endpoint}`, { headers }).then(res => {
                         if (!res.ok) throw new Error(`Request failed for ${endpoint}`);
                         return res.json();
                     })
@@ -199,13 +240,14 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
         fetchAllData();
 
         return () => { isMounted = false; };
-    }, [addNotification]);
+    }, [addNotification, getAuthHeaders]);
 
 
     const fetchAvailableRooms = useCallback(async () => {
         if (!searchDates.checkIn || !searchDates.checkOut) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/rooms/available?checkInDate=${searchDates.checkIn}&checkOutDate=${searchDates.checkOut}`);
+            const headers = getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/rooms/available?checkInDate=${searchDates.checkIn}&checkOutDate=${searchDates.checkOut}`, { headers });
             if (!response.ok) throw new Error('Failed to fetch available rooms');
             const data = await response.json();
             setAvailableRooms(data);
@@ -213,37 +255,80 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             console.error('Error fetching available rooms:', error);
             addNotification('Could not check room availability.', 'error');
         }
-    }, [searchDates, addNotification]);
-    
-    const fetchDataForEndpoint = async (endpoint: string) => {
+    }, [searchDates, addNotification, getAuthHeaders]);
+
+    const fetchDataForEndpoint = useCallback(async (endpoint: string) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/${endpoint}`);
+            const headers = getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/${endpoint}`, { headers });
+            
+            // If unauthorized, try to refresh token
+            if (response.status === 401) {
+                const refreshed = await refreshTokenIfNeeded();
+                if (refreshed) {
+                    // Retry with new token
+                    const newHeaders = getAuthHeaders();
+                    const retryResponse = await fetch(`${API_BASE_URL}/${endpoint}`, { headers: newHeaders });
+                    if (!retryResponse.ok) throw new Error(`Failed to fetch ${endpoint}`);
+                    const data = await retryResponse.json();
+                    updateDataState(endpoint, data);
+                    return;
+                }
+            }
+
             if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
             const data = await response.json();
-            
-            switch(endpoint) {
-                case 'rooms': setRooms(data); break;
-                case 'services': setServices(data); break;
-                case 'bookings': setBookings(data); break;
-                case 'employees': setEmployees(data); break;
-                case 'inventory': setInventory(data); break;
-                case 'spa-gym': setSpaGymAppointments(data); break;
-                case 'schedules': setSchedules(data); break;
-                case 'testimonials': setTestimonials(data); break;
-                case 'posts': setPosts(data); break;
-            }
+            updateDataState(endpoint, data);
         } catch(error) {
             console.error(`Error refetching ${endpoint}`, error);
         }
-    }
+    }, [getAuthHeaders, refreshTokenIfNeeded]);
+
+    const updateDataState = (endpoint: string, data: any) => {
+        switch(endpoint) {
+            case 'rooms': setRooms(data); break;
+            case 'services': setServices(data); break;
+            case 'bookings': setBookings(data); break;
+            case 'employees': setEmployees(data); break;
+            case 'inventory': setInventory(data); break;
+            case 'spa-gym': setSpaGymAppointments(data); break;
+            case 'schedules': setSchedules(data); break;
+            case 'testimonials': setTestimonials(data); break;
+            case 'posts': setPosts(data); break;
+        }
+    };
     
-    const createOrUpdate = async (method: 'POST' | 'PUT' | 'PATCH', endpoint: string, body: any, successMsg: string) => {
+    const createOrUpdate = useCallback(async (method: 'POST' | 'PUT' | 'PATCH', endpoint: string, body: any, successMsg: string) => {
         try {
+            const headers = getAuthHeaders();
             const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify(body),
             });
+
+            // If unauthorized, try to refresh token
+            if (response.status === 401) {
+                const refreshed = await refreshTokenIfNeeded();
+                if (refreshed) {
+                    // Retry with new token
+                    const newHeaders = getAuthHeaders();
+                    const retryResponse = await fetch(`${API_BASE_URL}/${endpoint}`, {
+                        method,
+                        headers: newHeaders,
+                        body: JSON.stringify(body),
+                    });
+                    if (!retryResponse.ok) {
+                        const err = await retryResponse.json();
+                        throw new Error(err.message || 'API request failed');
+                    }
+                    addNotification(successMsg, 'success');
+                    const endpointKey = endpoint.split('/')[0];
+                    await fetchDataForEndpoint(endpointKey);
+                    return await retryResponse.json();
+                }
+            }
+
             if (!response.ok) {
                 const err = await response.json();
                 throw new Error(err.message || 'API request failed');
@@ -257,11 +342,32 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             addNotification(error.message || `Operation failed.`, 'error');
             return null;
         }
-    };
+    }, [getAuthHeaders, refreshTokenIfNeeded, fetchDataForEndpoint, addNotification]);
     
-    const deleteResource = async (endpoint: string, id: string, successMsg: string) => {
+    const deleteResource = useCallback(async (endpoint: string, id: string, successMsg: string) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, { method: 'DELETE' });
+            const headers = getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
+                method: 'DELETE',
+                headers,
+            });
+
+            // If unauthorized, try to refresh token
+            if (response.status === 401) {
+                const refreshed = await refreshTokenIfNeeded();
+                if (refreshed) {
+                    const newHeaders = getAuthHeaders();
+                    const retryResponse = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
+                        method: 'DELETE',
+                        headers: newHeaders,
+                    });
+                    if (!retryResponse.ok) throw new Error('Delete request failed');
+                    addNotification(successMsg, 'success');
+                    await fetchDataForEndpoint(endpoint);
+                    return;
+                }
+            }
+
             if (!response.ok) throw new Error('Delete request failed');
             addNotification(successMsg, 'success');
             await fetchDataForEndpoint(endpoint);
@@ -269,7 +375,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             console.error(`Error deleting ${endpoint}/${id}:`, error);
             addNotification('Deletion failed.', 'error');
         }
-    };
+    }, [getAuthHeaders, refreshTokenIfNeeded, fetchDataForEndpoint, addNotification]);
     
     const login = async (username: string, password: string): Promise<boolean> => {
         try {
@@ -284,6 +390,9 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
                  return false;
             }
             addNotification('Login successful!', 'success');
+            // Store tokens and user data
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('refreshToken', data.refreshToken);
             sessionStorage.setItem('currentUser', JSON.stringify(data.user));
             setCurrentUser(data.user);
             return true;
@@ -317,12 +426,29 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
       window.scrollTo(0, 0);
     }, [isAuthenticated]);
 
-    const logout = () => {
-        sessionStorage.removeItem('currentUser');
-        setCurrentUser(null);
-        addNotification('You have been logged out.', 'info');
-        navigateTo(View.LANDING);
-    };
+    const logout = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            sessionStorage.removeItem('currentUser');
+            setCurrentUser(null);
+            addNotification('You have been logged out.', 'info');
+            navigateTo(View.LANDING);
+        }
+    }, [navigateTo, addNotification]);
     
     const value: IAppContext = {
         theme, toggleTheme, isAuthenticated, currentUser,

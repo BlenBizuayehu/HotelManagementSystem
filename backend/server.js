@@ -1,6 +1,9 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const cors = require('cors');
 const connectDB = require('./config/db');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 
 // Load env vars
 dotenv.config();
@@ -30,27 +33,41 @@ connectDB();
 
 const app = express();
 
-// Body parser
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+
+// Body parser (skip for webhook route)
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
-// Fix: Replaced the previous manual CORS implementation with a more robust and standard one.
-// This correctly handles pre-flight OPTIONS requests from the browser, which was the
-// root cause of the 404 errors on specific routes like /api/posts.
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-  );
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PATCH, PUT, DELETE, OPTIONS'
-  );
-  // Browsers send an OPTIONS request first to check the server's policy
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+// Apply rate limiting to all API routes (except webhook)
+app.use('/api', (req, res, next) => {
+  if (req.path === '/payments/webhook') {
+    return next();
   }
-  next();
+  apiLimiter(req, res, next);
 });
 
 
