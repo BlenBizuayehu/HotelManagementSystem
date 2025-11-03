@@ -14,6 +14,12 @@ const BookingSchema = new mongoose.Schema({
         enum: ['Confirmed', 'Pending', 'Cancelled'],
         default: 'Pending' 
     },
+    paymentIntentId: { type: String },
+    amount: { type: Number },
+    currency: { type: String, default: 'usd' },
+    paidAt: { type: Date },
+    refundedAt: { type: Date },
+    createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Booking', BookingSchema);
