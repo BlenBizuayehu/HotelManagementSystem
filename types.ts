@@ -13,7 +13,7 @@ export interface Post {
 
 export interface User {
   username: string;
-  role: 'Admin' | 'Manager';
+  role: 'Admin' | 'Manager' | 'Staff';
 }
 
 export enum View {
@@ -30,6 +30,7 @@ export enum View {
   SERVICES = 'SERVICES',
   HR = 'HR',
   SCHEDULE = 'SCHEDULE',
+  SHIFTS = 'SHIFTS',
   INVENTORY = 'INVENTORY',
   SPAGYM = 'SPAGYM',
   TESTIMONIALS = 'TESTIMONIALS',
@@ -58,9 +59,47 @@ export interface Service {
     _id: string;
     name: string;
     description: string;
-    category: 'Spa & Wellness' | 'Dining' | 'Meetings & Events' | 'Other';
+    category: 'Spa & Wellness' | 'Gym' | 'Dining' | 'Meetings & Events' | 'Other';
     price: number;
+    duration: number; // Duration in minutes
+    availableTimes?: Array<{
+        day: string;
+        startTime: string;
+        endTime: string;
+    }>;
+    assignedStaff?: Array<{
+        _id: string;
+        name: string;
+    }>;
+    reviews?: Array<{
+        guestName: string;
+        rating: number;
+        comment: string;
+        date: string;
+    }>;
+    averageRating?: number;
+    isAvailable: boolean;
     imageUrls: string[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ServiceBooking {
+    _id: string;
+    service: string | Service;
+    guestName: string;
+    guestEmail: string;
+    guestPhone?: string;
+    bookingDate: string;
+    bookingTime: string;
+    duration: number;
+    assignedStaff?: string | Employee;
+    status: 'Upcoming' | 'Completed' | 'Cancelled' | 'No-Show';
+    notes?: string;
+    totalPrice: number;
+    paymentStatus: 'Pending' | 'Paid' | 'Refunded';
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Booking {
@@ -78,17 +117,63 @@ export interface Booking {
 export interface Employee {
   _id: string;
   name: string;
-  role: string;
+  role: 'Admin' | 'Manager' | 'Staff';
   department: string;
-  status: 'Active' | 'On Leave';
+  salary?: number;
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  assignedShifts?: Array<{
+    day: string;
+    shift: string | Shift; // Shift ID or populated Shift object
+  }>;
+  documents?: Array<{
+    type: 'ID' | 'Contract' | 'Certificate' | 'Other';
+    fileName: string;
+    fileUrl: string;
+    uploadedAt: string;
+  }>;
+  performanceMetrics?: {
+    rating: number;
+    reviews: Array<{
+      reviewer: string;
+      comment: string;
+      rating: number;
+      date: string;
+    }>;
+  };
+  attendance?: {
+    totalHours: number;
+    lastCheckIn?: string;
+    lastCheckOut?: string;
+  };
+  dateJoined?: string;
+  status: 'Active' | 'On Leave' | 'Terminated';
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface InventoryItem {
   _id: string;
   name: string;
   category: string;
+  unit: string;
   stock: number;
+  reorderThreshold: number;
+  supplier?: {
+    name?: string;
+    contact?: string;
+    email?: string;
+  };
+  lastRestockDate?: string;
+  pricePerUnit?: number;
+  location?: string;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SpaGymAppointment {
@@ -99,11 +184,25 @@ export interface SpaGymAppointment {
   status: 'Confirmed' | 'Completed';
 }
 
+export interface Shift {
+  _id: string;
+  name: string;
+  startTime: string; // Format: "HH:MM" (24-hour)
+  endTime: string; // Format: "HH:MM" (24-hour)
+  description?: string;
+  isActive: boolean;
+  daysOfWeek?: string[];
+  color?: string;
+  displayTime?: string; // Virtual field
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Schedule {
   _id: string;
   employeeId: Employee;
   date: string;
-  shift: 'Morning (9AM-5PM)' | 'Evening (3PM-11PM)' | 'Night (11PM-7AM)';
+  shift: string | Shift; // Shift ID or populated Shift object
 }
 
 export interface Notification {
