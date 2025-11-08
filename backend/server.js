@@ -52,24 +52,39 @@ app.use(helmet({
 
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:5173', // Vite dev server
   'https://hotel-management-system-n5yt-1zoc4fmst-blen-bizuayehus-projects.vercel.app',
+  'https://hotel-management-system-n5yt-b67d3fv0b-blen-bizuayehus-projects.vercel.app',
+  // Allow all Vercel preview deployments for this project
+  /^https:\/\/hotel-management-system-n5yt-.*\.vercel\.app$/,
 ];
 
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow curl/postman
-    if (
-      origin.startsWith('http://localhost:') || 
-      origin.endsWith('.vercel.app')
-    ) {
+    // allow requests with no origin (like curl or Postman)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches any allowed origin (string or regex)
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
 };
+
 
 
 app.use(cors(corsOptions));
