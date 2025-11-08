@@ -66,12 +66,35 @@ exports.createBooking = async (req, res) => {
     try {
         const bookingData = req.body;
         
+        // Validate required fields for room bookings
+        if (bookingData.itemType === 'Room') {
+            if (!bookingData.checkIn || !bookingData.checkOut) {
+                return res.status(400).json({ message: 'Check-in and check-out dates are required for room bookings' });
+            }
+            if (!bookingData.numberOfGuests) {
+                bookingData.numberOfGuests = 1; // Default to 1 if not provided
+            }
+        }
+        
         // Check if room is available
-        if (bookingData.roomId) {
-            const room = await Room.findById(bookingData.roomId);
+        if (bookingData.roomId || bookingData.itemType === 'Room') {
+            // If roomId is not provided but itemType is Room, try to find room by name
+            let room;
+            if (bookingData.roomId) {
+                room = await Room.findById(bookingData.roomId);
+            } else if (bookingData.itemName) {
+                room = await Room.findOne({ name: bookingData.itemName });
+            }
+            
             if (!room) {
                 return res.status(404).json({ message: 'Room not found' });
             }
+            
+            // Set roomId if it wasn't provided
+            if (!bookingData.roomId) {
+                bookingData.roomId = room._id;
+            }
+            
             if (!room.isAvailableForBooking) {
                 return res.status(400).json({ message: 'Room is not available for booking' });
             }
@@ -100,6 +123,13 @@ exports.createBooking = async (req, res) => {
             bookingData.roomType = room.roomType;
         }
         
+        // Handle service bookings - set room-related fields to 0
+        if (bookingData.itemType === 'Service') {
+            if (!bookingData.basePricePerNight) bookingData.basePricePerNight = 0;
+            if (!bookingData.totalRoomCost) bookingData.totalRoomCost = 0;
+            if (!bookingData.numberOfGuests) bookingData.numberOfGuests = 1;
+        }
+        
         // Find or create guest profile
         let guest = await Guest.findOne({ email: bookingData.guestEmail });
         if (!guest) {
@@ -112,6 +142,11 @@ exports.createBooking = async (req, res) => {
             });
         }
         bookingData.guestId = guest._id;
+        
+        // Ensure totalAmount is set (will be calculated by calculateTotal)
+        if (!bookingData.totalAmount) {
+            bookingData.totalAmount = bookingData.totalRoomCost || 0;
+        }
         
         // Calculate total amount
         const newBooking = new Booking(bookingData);
