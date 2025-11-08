@@ -253,15 +253,59 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
 
     const fetchAvailableRooms = useCallback(async () => {
         if (!searchDates.checkIn || !searchDates.checkOut) return;
+        
+        // Validate dates
+        const checkIn = new Date(searchDates.checkIn);
+        const checkOut = new Date(searchDates.checkOut);
+        if (checkOut <= checkIn) {
+            return; // Don't fetch if dates are invalid
+        }
+        
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+        
         try {
             const headers = getAuthHeaders();
-            const response = await fetch(`${API_BASE_URL}/rooms/available?checkInDate=${searchDates.checkIn}&checkOutDate=${searchDates.checkOut}`, { headers });
-            if (!response.ok) throw new Error('Failed to fetch available rooms');
+            const url = `${API_BASE_URL}/rooms/available?checkInDate=${encodeURIComponent(searchDates.checkIn)}&checkOutDate=${encodeURIComponent(searchDates.checkOut)}`;
+            
+            const response = await fetch(url, { 
+                headers,
+                signal: abortController.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage = 'Failed to fetch available rooms';
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorMessage;
+                } catch {
+                    // If response is not JSON, use status text
+                    errorMessage = response.statusText || errorMessage;
+                }
+                throw new Error(errorMessage);
+            }
+            
             const data = await response.json();
-            setAvailableRooms(data);
-        } catch (error) {
-            console.error('Error fetching available rooms:', error);
-            addNotification('Could not check room availability.', 'error');
+            setAvailableRooms(data || []);
+        } catch (error: any) {
+            clearTimeout(timeoutId);
+            
+            // Handle different types of errors
+            if (error.name === 'AbortError') {
+                console.error('Error fetching available rooms: Request timeout');
+                addNotification('Request timed out. Please check your connection and try again.', 'error');
+            } else if (error.message === 'Failed to fetch' || error.message.includes('NetworkError') || error instanceof TypeError) {
+                console.error('Error fetching available rooms: Network error - Backend may be unavailable', error);
+                addNotification('Unable to connect to the server. Please ensure the backend is running.', 'error');
+            } else {
+                console.error('Error fetching available rooms:', error);
+                addNotification(error.message || 'Could not check room availability.', 'error');
+            }
+            // Set empty array on error to prevent showing stale data
+            setAvailableRooms([]);
         }
     }, [searchDates, addNotification, getAuthHeaders]);
 
