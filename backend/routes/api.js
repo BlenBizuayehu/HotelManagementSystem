@@ -7,12 +7,13 @@ const { validateLogin, validateBooking } = require('../middleware/validator');
 
 const { getRooms, createRoom, updateRoom, deleteRoom, getAvailableRooms } = require('../controllers/roomController');
 const { getBookings, createBooking, updateBookingStatus, deleteBooking } = require('../controllers/bookingController');
-const { getEmployees, createEmployee, updateEmployee, deleteEmployee } = require('../controllers/employeeController');
-const { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = require('../controllers/inventoryController');
+const { getEmployees, getEmployee, createEmployee, updateEmployee, deleteEmployee, restoreEmployee, addPerformanceReview } = require('../controllers/employeeController');
+const { getInventory, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, exportToCSV } = require('../controllers/inventoryController');
 const { getSchedules, createSchedule, deleteSchedule } = require('../controllers/scheduleController');
 const { getAppointments, createAppointment, updateAppointment } = require('../controllers/spaGymController');
 const { getWelcomeMessage, getAdminInsight } = require('../controllers/geminiController');
-const { getServices, createService, updateService, deleteService } = require('../controllers/serviceController');
+const { getServices, getService, createService, updateService, deleteService, addReview, assignStaff } = require('../controllers/serviceController');
+const { getServiceBookings, getServiceBooking, createServiceBooking, updateServiceBooking, updateServiceBookingStatus, deleteServiceBooking, getAvailableTimeSlots } = require('../controllers/serviceBookingController');
 const { login, refreshToken, logout } = require('../controllers/authController');
 const { getTestimonials, createTestimonial } = require('../controllers/testimonialController');
 const { getPosts, createPost, updatePost, deletePost } = require('../controllers/postController');
@@ -57,10 +58,24 @@ router.route('/gemini/insight').post(protect, getAdminInsight);
 
 // Admin only routes
 router.route('/employees').get(protect, authorize('Admin'), getEmployees).post(protect, authorize('Admin'), createEmployee);
-router.route('/employees/:id').put(protect, authorize('Admin'), updateEmployee).delete(protect, authorize('Admin'), deleteEmployee);
+router.route('/employees/:id').get(protect, authorize('Admin'), getEmployee).put(protect, authorize('Admin'), updateEmployee).delete(protect, authorize('Admin'), deleteEmployee);
+router.route('/employees/:id/restore').patch(protect, authorize('Admin'), restoreEmployee);
+router.route('/employees/:id/reviews').post(protect, authorize('Admin'), addPerformanceReview);
 
 router.route('/inventory').get(protect, authorize('Admin'), getInventory).post(protect, authorize('Admin'), createInventoryItem);
-router.route('/inventory/:id').patch(protect, authorize('Admin'), updateInventoryItem).delete(protect, authorize('Admin'), deleteInventoryItem);
+router.route('/inventory/export').get(protect, authorize('Admin'), exportToCSV);
+router.route('/inventory/:id').get(protect, authorize('Admin'), getInventoryItem).patch(protect, authorize('Admin'), updateInventoryItem).delete(protect, authorize('Admin'), deleteInventoryItem);
+
+// Service routes
+router.route('/services/:id').get(protect, getService);
+router.route('/services/:id/reviews').post(protect, addReview);
+router.route('/services/:id/staff').patch(protect, authorize('Admin', 'Manager'), assignStaff);
+
+// Service booking routes
+router.route('/service-bookings').get(protect, getServiceBookings).post(protect, createServiceBooking);
+router.route('/service-bookings/available-slots').get(protect, getAvailableTimeSlots);
+router.route('/service-bookings/:id').get(protect, getServiceBooking).put(protect, updateServiceBooking).delete(protect, deleteServiceBooking);
+router.route('/service-bookings/:id/status').patch(protect, updateServiceBookingStatus);
 
 // Payment routes
 router.route('/payments/intent').post(protect, createPaymentIntent);
