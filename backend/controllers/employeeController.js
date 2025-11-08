@@ -49,7 +49,9 @@ exports.getEmployees = async (req, res) => {
         const sortOptions = {};
         sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-        const employees = await Employee.find(query).sort(sortOptions);
+        const employees = await Employee.find(query)
+            .populate('assignedShifts.shift', 'name startTime endTime displayTime')
+            .sort(sortOptions);
         res.json(employees);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -58,7 +60,8 @@ exports.getEmployees = async (req, res) => {
 
 exports.getEmployee = async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.id);
+        const employee = await Employee.findById(req.params.id)
+            .populate('assignedShifts.shift', 'name startTime endTime displayTime');
         if (!employee || employee.deletedAt) {
             return res.status(404).json({ message: 'Employee not found' });
         }

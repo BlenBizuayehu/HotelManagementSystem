@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, navigateTo, logout }) =>
     { view: View.SERVICES, label: 'Services', icon: BellIcon },
     { view: View.HR, label: 'HR', icon: UsersIcon },
     { view: View.SCHEDULE, label: 'Schedules', icon: CalendarIcon },
+    { view: View.SHIFTS, label: 'Shifts', icon: CalendarIcon },
     { view: View.INVENTORY, label: 'Inventory', icon: BoxIcon },
     { view: View.SPAGYM, label: 'Spa & Gym', icon: HeartIcon },
     { view: View.TESTIMONIALS, label: 'Testimonials', icon: QuoteIcon },
@@ -28,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, navigateTo, logout }) =>
     { view: View.AI_ASSISTANT, label: 'AI Assistant', icon: SparklesIcon },
   ];
   
-  const ADMIN_ONLY_VIEWS = [View.HR, View.INVENTORY];
+  const ADMIN_ONLY_VIEWS = [View.HR, View.INVENTORY, View.SHIFTS];
 
   const accessibleNavItems = navItems.filter(item => {
     if(currentUser?.role === 'Admin') return true;

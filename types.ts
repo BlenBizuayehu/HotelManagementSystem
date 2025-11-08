@@ -30,6 +30,7 @@ export enum View {
   SERVICES = 'SERVICES',
   HR = 'HR',
   SCHEDULE = 'SCHEDULE',
+  SHIFTS = 'SHIFTS',
   INVENTORY = 'INVENTORY',
   SPAGYM = 'SPAGYM',
   TESTIMONIALS = 'TESTIMONIALS',
@@ -126,7 +127,7 @@ export interface Employee {
   };
   assignedShifts?: Array<{
     day: string;
-    shift: 'Morning (9AM-5PM)' | 'Evening (3PM-11PM)' | 'Night (11PM-7AM)';
+    shift: string | Shift; // Shift ID or populated Shift object
   }>;
   documents?: Array<{
     type: 'ID' | 'Contract' | 'Certificate' | 'Other';
@@ -183,11 +184,25 @@ export interface SpaGymAppointment {
   status: 'Confirmed' | 'Completed';
 }
 
+export interface Shift {
+  _id: string;
+  name: string;
+  startTime: string; // Format: "HH:MM" (24-hour)
+  endTime: string; // Format: "HH:MM" (24-hour)
+  description?: string;
+  isActive: boolean;
+  daysOfWeek?: string[];
+  color?: string;
+  displayTime?: string; // Virtual field
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Schedule {
   _id: string;
   employeeId: Employee;
   date: string;
-  shift: 'Morning (9AM-5PM)' | 'Evening (3PM-11PM)' | 'Night (11PM-7AM)';
+  shift: string | Shift; // Shift ID or populated Shift object
 }
 
 export interface Notification {

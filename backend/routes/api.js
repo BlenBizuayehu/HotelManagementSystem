@@ -14,6 +14,7 @@ const { getAppointments, createAppointment, updateAppointment } = require('../co
 const { getWelcomeMessage, getAdminInsight } = require('../controllers/geminiController');
 const { getServices, getService, createService, updateService, deleteService, addReview, assignStaff } = require('../controllers/serviceController');
 const { getServiceBookings, getServiceBooking, createServiceBooking, updateServiceBooking, updateServiceBookingStatus, deleteServiceBooking, getAvailableTimeSlots } = require('../controllers/serviceBookingController');
+const { getShifts, getShift, createShift, updateShift, deleteShift } = require('../controllers/shiftController');
 const { login, refreshToken, logout } = require('../controllers/authController');
 const { getTestimonials, createTestimonial } = require('../controllers/testimonialController');
 const { getPosts, createPost, updatePost, deletePost } = require('../controllers/postController');
@@ -76,6 +77,10 @@ router.route('/service-bookings').get(protect, getServiceBookings).post(protect,
 router.route('/service-bookings/available-slots').get(protect, getAvailableTimeSlots);
 router.route('/service-bookings/:id').get(protect, getServiceBooking).put(protect, updateServiceBooking).delete(protect, deleteServiceBooking);
 router.route('/service-bookings/:id/status').patch(protect, updateServiceBookingStatus);
+
+// Shift management routes (Admin only)
+router.route('/shifts').get(protect, getShifts).post(protect, authorize('Admin'), createShift);
+router.route('/shifts/:id').get(protect, getShift).put(protect, authorize('Admin'), updateShift).delete(protect, authorize('Admin'), deleteShift);
 
 // Payment routes
 router.route('/payments/intent').post(protect, createPaymentIntent);

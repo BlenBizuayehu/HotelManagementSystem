@@ -3,10 +3,10 @@ import Card from '../components/Card';
 import Modal from '../components/Modal';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { useAppContext } from '../state/AppContext';
-import { Employee } from '../types';
+import { Employee, Shift } from '../types';
 
 const HRPage: React.FC = () => {
-    const { employees, addEmployee, updateEmployee, deleteEmployee, addNotification, getAuthHeaders, API_BASE_URL } = useAppContext();
+    const { employees, shifts, addEmployee, updateEmployee, deleteEmployee, addNotification, getAuthHeaders, API_BASE_URL } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
@@ -118,6 +118,26 @@ const HRPage: React.FC = () => {
         const [address, setAddress] = useState(employee?.contactInfo?.address || '');
         const [status, setStatus] = useState<Employee['status']>(employee?.status || 'Active');
         const [dateJoined, setDateJoined] = useState(employee?.dateJoined ? new Date(employee.dateJoined).toISOString().split('T')[0] : '');
+        const [assignedShifts, setAssignedShifts] = useState<Array<{ day: string; shift: string }>>(
+            employee?.assignedShifts?.map(s => ({
+                day: s.day,
+                shift: typeof s.shift === 'string' ? s.shift : s.shift._id
+            })) || []
+        );
+
+        const addShiftAssignment = () => {
+            setAssignedShifts([...assignedShifts, { day: 'Monday', shift: '' }]);
+        };
+
+        const removeShiftAssignment = (index: number) => {
+            setAssignedShifts(assignedShifts.filter((_, i) => i !== index));
+        };
+
+        const updateShiftAssignment = (index: number, field: 'day' | 'shift', value: string) => {
+            const updated = [...assignedShifts];
+            updated[index] = { ...updated[index], [field]: value };
+            setAssignedShifts(updated);
+        };
 
         const handleSubmit = (e: React.FormEvent) => {
             e.preventDefault();
@@ -129,7 +149,8 @@ const HRPage: React.FC = () => {
                 salary: parseFloat(salary.toString()) || 0,
                 contactInfo: { email, phone, address },
                 status,
-                dateJoined: dateJoined ? new Date(dateJoined) : new Date()
+                dateJoined: dateJoined ? new Date(dateJoined) : new Date(),
+                assignedShifts: assignedShifts.filter(s => s.day && s.shift)
             };
             onSave(employeeData);
         };
@@ -188,6 +209,53 @@ const HRPage: React.FC = () => {
                             <option value="On Leave">On Leave</option>
                             <option value="Terminated">Terminated</option>
                         </select>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Shifts</label>
+                            <button type="button" onClick={addShiftAssignment} className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+                                + Add Shift
+                            </button>
+                        </div>
+                        {assignedShifts.map((shiftAssignment, index) => (
+                            <div key={index} className="grid grid-cols-3 gap-2 mb-2">
+                                <select
+                                    value={shiftAssignment.day}
+                                    onChange={e => updateShiftAssignment(index, 'day', e.target.value)}
+                                    className={inputClasses}
+                                >
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                    <option value="Sunday">Sunday</option>
+                                </select>
+                                <select
+                                    value={shiftAssignment.shift}
+                                    onChange={e => updateShiftAssignment(index, 'shift', e.target.value)}
+                                    className={inputClasses}
+                                >
+                                    <option value="">Select Shift</option>
+                                    {shifts.filter(s => s.isActive).map(shift => (
+                                        <option key={shift._id} value={shift._id}>
+                                            {shift.name} ({shift.startTime} - {shift.endTime})
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={() => removeShiftAssignment(index)}
+                                    className="text-red-600 hover:text-red-700 font-semibold text-sm"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        ))}
+                        {assignedShifts.length === 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No shifts assigned. Click "Add Shift" to assign.</p>
+                        )}
                     </div>
                 </div>
                 <div className="mt-6 flex justify-end space-x-4">

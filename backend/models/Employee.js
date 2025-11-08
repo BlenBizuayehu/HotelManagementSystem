@@ -18,7 +18,7 @@ const EmployeeSchema = new mongoose.Schema({
     },
     assignedShifts: [{
         day: { type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
-        shift: { type: String, enum: ['Morning (9AM-5PM)', 'Evening (3PM-11PM)', 'Night (11PM-7AM)'] }
+        shift: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' } // Reference to Shift model
     }],
     documents: [{
         type: { type: String, enum: ['ID', 'Contract', 'Certificate', 'Other'] },

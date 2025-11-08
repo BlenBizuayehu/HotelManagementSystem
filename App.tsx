@@ -18,6 +18,7 @@ import PublicTestimonialsPage from './pages/PublicTestimonialsPage';
 import RoomsPage from './pages/RoomsPage';
 import SchedulePage from './pages/SchedulePage';
 import ServicesPage from './pages/ServicesPage';
+import ShiftsPage from './pages/ShiftsPage';
 import SpaGymPage from './pages/SpaGymPage';
 import TestimonialsPage from './pages/TestimonialsPage';
 import { useAppContext } from './state/AppContext';
@@ -46,7 +47,7 @@ const App: React.FC = () => {
   };
   
   const renderDashboardView = () => {
-    const ADMIN_ONLY_VIEWS = [View.HR, View.INVENTORY];
+    const ADMIN_ONLY_VIEWS = [View.HR, View.INVENTORY, View.SHIFTS];
 
     if (currentUser?.role === 'Manager' && ADMIN_ONLY_VIEWS.includes(currentView)) {
         return (
@@ -72,6 +73,7 @@ const App: React.FC = () => {
         case View.SERVICES: return <ServicesPage />;
         case View.HR: return <HRPage />;
         case View.SCHEDULE: return <SchedulePage />;
+        case View.SHIFTS: return <ShiftsPage />;
         case View.INVENTORY: return <InventoryPage />;
         case View.SPAGYM: return <SpaGymPage />;
         case View.TESTIMONIALS: return <TestimonialsPage />;

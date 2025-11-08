@@ -7,6 +7,7 @@ import {
     Post,
     Room, Schedule,
     Service,
+    Shift,
     SpaGymAppointment,
     Testimonial,
     User,
@@ -34,6 +35,7 @@ interface IAppContext {
     inventory: InventoryItem[];
     spaGymAppointments: SpaGymAppointment[];
     schedules: Schedule[];
+    shifts: Shift[];
     testimonials: Testimonial[];
     posts: Post[];
     notifications: Notification[];
@@ -47,6 +49,10 @@ interface IAppContext {
     
     login: (user: string, pass: string) => Promise<boolean>;
     logout: () => void;
+    
+    // Expose API utilities
+    API_BASE_URL: string;
+    getAuthHeaders: () => HeadersInit;
     
     addRoom: (room: Omit<Room, '_id'>) => Promise<void>;
     updateRoom: (room: Room) => Promise<void>;
@@ -113,6 +119,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [spaGymAppointments, setSpaGymAppointments] = useState<SpaGymAppointment[]>([]);
     const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [shifts, setShifts] = useState<Shift[]>([]);
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -196,7 +203,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
         const fetchAllData = async () => {
             const endpoints = [
                 'rooms', 'services', 'bookings', 'employees', 
-                'inventory', 'spa-gym', 'schedules', 'testimonials', 'posts'
+                'inventory', 'spa-gym', 'schedules', 'shifts', 'testimonials', 'posts'
             ];
             
             // Use Promise.allSettled to ensure all requests complete, even if some fail.
@@ -233,6 +240,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             if (dataMap.inventory) setInventory(dataMap.inventory);
             if (dataMap['spa-gym']) setSpaGymAppointments(dataMap['spa-gym']);
             if (dataMap.schedules) setSchedules(dataMap.schedules);
+            if (dataMap.shifts) setShifts(dataMap.shifts);
             if (dataMap.testimonials) setTestimonials(dataMap.testimonials);
             if (dataMap.posts) setPosts(dataMap.posts);
         };
@@ -293,6 +301,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             case 'inventory': setInventory(data); break;
             case 'spa-gym': setSpaGymAppointments(data); break;
             case 'schedules': setSchedules(data); break;
+            case 'shifts': setShifts(data); break;
             case 'testimonials': setTestimonials(data); break;
             case 'posts': setPosts(data); break;
         }
@@ -452,8 +461,9 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
     
     const value: IAppContext = {
         theme, toggleTheme, isAuthenticated, currentUser,
-        rooms, availableRooms, services, bookings, employees, inventory, spaGymAppointments, schedules, testimonials, posts, notifications,
+        rooms, availableRooms, services, bookings, employees, inventory, spaGymAppointments, schedules, shifts, testimonials, posts, notifications,
         searchDates, setSearchDates, fetchAvailableRooms, addNotification, removeNotification, login, logout,
+        API_BASE_URL, getAuthHeaders,
         addRoom: (room: any) => createOrUpdate('POST', 'rooms', room, 'Room added successfully.'),
         updateRoom: (room: any) => createOrUpdate('PUT', `rooms/${room._id}`, room, 'Room updated successfully.'),
         deleteRoom: (id: string) => deleteResource('rooms', id, 'Room deleted.'),

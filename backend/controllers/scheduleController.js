@@ -4,7 +4,9 @@ const Employee = require('../models/Employee');
 
 exports.getSchedules = async (req, res) => {
     try {
-        const schedules = await Schedule.find().populate('employeeId', 'name');
+        const schedules = await Schedule.find()
+            .populate('employeeId', 'name')
+            .populate('shift', 'name startTime endTime displayTime');
         res.json(schedules);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -15,7 +17,9 @@ exports.createSchedule = async (req, res) => {
     try {
         const newSchedule = new Schedule(req.body);
         await newSchedule.save();
-        const populatedSchedule = await Schedule.findById(newSchedule._id).populate('employeeId', 'name');
+        const populatedSchedule = await Schedule.findById(newSchedule._id)
+            .populate('employeeId', 'name')
+            .populate('shift', 'name startTime endTime displayTime');
         res.status(201).json(populatedSchedule);
     } catch (err) {
         res.status(400).json({ message: err.message });
