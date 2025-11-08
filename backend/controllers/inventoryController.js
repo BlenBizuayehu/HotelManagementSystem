@@ -127,6 +127,39 @@ exports.deleteInventoryItem = async (req, res) => {
     }
 };
 
+exports.getLowStockAlerts = async (req, res) => {
+    try {
+        const items = await InventoryItem.find({
+            $or: [
+                { stock: { $lte: 0 } },
+                { $expr: { $lte: ['$stock', '$reorderThreshold'] } }
+            ]
+        }).sort({ stock: 1 });
+        
+        const alerts = items.map(item => ({
+            itemId: item._id,
+            name: item.name,
+            category: item.category,
+            currentStock: item.stock,
+            reorderThreshold: item.reorderThreshold,
+            status: item.status,
+            supplier: item.supplier,
+            suggestedReorderQuantity: Math.max(item.reorderThreshold * 2, 10) - item.stock,
+            urgency: item.stock <= 0 ? 'Critical' : item.stock <= item.reorderThreshold * 0.5 ? 'High' : 'Medium'
+        }));
+        
+        res.json({
+            totalAlerts: alerts.length,
+            critical: alerts.filter(a => a.urgency === 'Critical').length,
+            high: alerts.filter(a => a.urgency === 'High').length,
+            medium: alerts.filter(a => a.urgency === 'Medium').length,
+            alerts
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.exportToCSV = async (req, res) => {
     try {
         const items = await InventoryItem.find();
