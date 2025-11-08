@@ -1,5 +1,10 @@
 
-const API_URL = 'http://127.0.0.1:5000/api/gemini'; // Your backend server URL
+const mode = (import.meta as any).env.MODE;
+const API_BASE_URL =
+  mode === "production"
+    ? "https://hotelmanagementsystem-1-1ozu.onrender.com/api"
+    : "http://127.0.0.1:5000/api";
+const API_URL = `${API_BASE_URL}/gemini`;
 
 export const generateWelcomeMessage = async (hotelName: string, date: string, specialEvents: string[]): Promise<string> => {
   try {
