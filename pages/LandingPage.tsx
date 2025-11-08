@@ -107,8 +107,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ navigateTo }) => {
             <button onClick={() => setActiveTab('services')} className={`px-8 py-3 text-lg font-semibold transition-colors ${activeTab === 'services' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>Hotel Services</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {activeTab === 'rooms' && availableRooms.map(renderRoomCard)}
-            {activeTab === 'services' && services.map(renderServiceCard)}
+            {activeTab === 'rooms' && (
+              availableRooms.length > 0 ? (
+                availableRooms.map(renderRoomCard)
+              ) : searchDates.checkIn && searchDates.checkOut ? (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    No rooms available for the selected dates. Please try different dates.
+                  </p>
+                </div>
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Please select check-in and check-out dates to view available rooms.
+                  </p>
+                </div>
+              )
+            )}
+            {activeTab === 'services' && (
+              services.length > 0 ? (
+                services.map(renderServiceCard)
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">No services available at this time.</p>
+                </div>
+              )
+            )}
           </div>
         </div>
 

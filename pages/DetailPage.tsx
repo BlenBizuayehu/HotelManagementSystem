@@ -40,7 +40,12 @@ const DetailPage: React.FC<DetailPageProps> = ({ item, navigateTo }) => {
             guestPhone,
             itemName: item.name,
             itemType: isRoom ? 'Room' : 'Service',
-            ...(isRoom && { checkIn: searchDates.checkIn, checkOut: searchDates.checkOut }),
+            ...(isRoom && { 
+                roomId: item._id,
+                checkIn: searchDates.checkIn, 
+                checkOut: searchDates.checkOut,
+                numberOfGuests: 1 // Default to 1, can be made configurable later
+            }),
             status: 'Pending',
         };
 

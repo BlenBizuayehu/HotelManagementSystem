@@ -252,12 +252,17 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
 
 
     const fetchAvailableRooms = useCallback(async () => {
-        if (!searchDates.checkIn || !searchDates.checkOut) return;
+        if (!searchDates.checkIn || !searchDates.checkOut) {
+            // Reset to empty array when dates are cleared
+            setAvailableRooms([]);
+            return;
+        }
         
         // Validate dates
         const checkIn = new Date(searchDates.checkIn);
         const checkOut = new Date(searchDates.checkOut);
         if (checkOut <= checkIn) {
+            setAvailableRooms([]);
             return; // Don't fetch if dates are invalid
         }
         
@@ -289,7 +294,12 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
             }
             
             const data = await response.json();
-            setAvailableRooms(data || []);
+            // Map currentPricePerNight to pricePerNight if needed for compatibility
+            const mappedRooms = (data || []).map((room: any) => ({
+                ...room,
+                pricePerNight: room.pricePerNight || room.currentPricePerNight || room.basePricePerNight
+            }));
+            setAvailableRooms(mappedRooms);
         } catch (error: any) {
             clearTimeout(timeoutId);
             

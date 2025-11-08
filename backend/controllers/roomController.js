@@ -84,9 +84,11 @@ exports.getAvailableRooms = async (req, res) => {
         // Calculate prices for each room
         const roomsWithPrices = availableRooms.map(room => {
             const price = room.getCurrentPrice(checkInDate);
+            const roomObj = room.toObject();
             return {
-                ...room.toObject(),
-                currentPricePerNight: price
+                ...roomObj,
+                pricePerNight: price, // Map to pricePerNight for frontend compatibility
+                currentPricePerNight: price // Keep for backward compatibility
             };
         });
         
