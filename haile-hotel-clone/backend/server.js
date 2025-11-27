@@ -9,6 +9,7 @@ import roomRoutes from './routes/rooms.js';
 import bookingRoutes from './routes/bookings.js';
 import contactRoutes from './routes/contact.js';
 import galleryRoutes from './routes/gallery.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 connectDB();
@@ -34,6 +35,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Haile Hotel API is running' });

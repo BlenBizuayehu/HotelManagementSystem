@@ -4,14 +4,23 @@ A complete clone of the Haile Hotels and Resorts website with full functionality
 
 ## Features
 
+### Public Website
 - 🏨 **Homepage**: Hero section with booking widget, featured rooms, amenities
 - 🛏️ **Rooms**: Room listings with filters, details, and availability
 - 📅 **Booking System**: Complete reservation system with date selection
 - 📸 **Gallery**: Image gallery with lightbox
 - 📧 **Contact**: Contact form and location information
 - 📱 **Responsive**: Fully responsive design for all devices
-- 💳 **Payment**: Payment integration ready
-- 🌐 **Multi-language**: Support for multiple languages
+
+### Admin Panel
+- 🔐 **Admin Authentication**: Secure login system with JWT tokens
+- 📊 **Dashboard**: Real-time statistics and overview
+- 👥 **Employee Management**: Create, view, update, and manage employees
+- 📅 **Schedule Management**: Assign and manage employee schedules
+- 🛏️ **Room Management**: Full CRUD operations for rooms
+- 📋 **Booking Management**: View, filter, and update all bookings
+- 📦 **Inventory Management**: Track and manage hotel inventory with low-stock alerts
+- 🔒 **Role-Based Access**: Permission-based access control
 
 ## Tech Stack
 
@@ -53,9 +62,21 @@ A complete clone of the Haile Hotels and Resorts website with full functionality
    npm run dev
    ```
 
-3. **Access**
+3. **Create Admin Account**
+   ```bash
+   cd haile-hotel-clone/backend
+   node seeders/adminSeeder.js
+   ```
+   Default credentials:
+   - Username: `admin`
+   - Email: `admin@hailehotels.com`
+   - Password: `admin123`
+   ⚠️ **Change password after first login!**
+
+4. **Access**
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:5000
+   - Admin Panel: http://localhost:5173/admin/login
 
 ## Project Structure
 
